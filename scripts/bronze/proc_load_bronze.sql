@@ -23,7 +23,7 @@ BEGIN
 		TRUNCATE TABLE bronze.bank_customers;
 		PRINT'>> Bulk Inserting Into: bronze.bank_customers'
 		BULK INSERT bronze.bank_customers
-		FROM 'C:\Users\hp\OneDrive\Desktop\files\customers_raw.csv'
+		FROM 'C:\Users\hp\OneDrive\Desktop\files\customers_raw.csv' -- change the file directory where the datasets you had stored
 		WITH (
 			FIRSTROW       = 2,
 			FORMAT         = 'CSV',
@@ -42,7 +42,7 @@ BEGIN
 		PRINT'>> Bulk Inserting Into: bronze.bank_accounts'
 
 		BULK INSERT bronze.bank_accounts
-		FROM 'C:\Users\hp\OneDrive\Desktop\files\accounts_raw.csv'
+		FROM 'C:\Users\hp\OneDrive\Desktop\files\accounts_raw.csv' -- change the file directory where the datasets you had stored
 		WITH (
 			FIRSTROW       = 2,
 			FORMAT         = 'CSV',
@@ -62,7 +62,7 @@ BEGIN
 		PRINT'>> Bulk Inserting Into: bronze.bank_transactions'
 
 		BULK INSERT bronze.bank_transactions
-		FROM 'C:\Users\hp\OneDrive\Desktop\files\transactions_raw.csv'
+		FROM 'C:\Users\hp\OneDrive\Desktop\files\transactions_raw.csv' -- change the file directory where the datasets you had stored
 		WITH (
 			FIRSTROW       = 2,
 			FORMAT         = 'CSV',
