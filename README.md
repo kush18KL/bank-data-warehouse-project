@@ -5,4 +5,4 @@ A SQL Server data warehouse project using Medallion Architecture (Bronze, Silver
 
 Bronze layer load executed successfully via `EXEC bronze.load_bronze;`
 
-![Bronze Load Success]
+![Bronze Load Success] outputs_screenshots/proc_load_bronze.png
