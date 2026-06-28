@@ -1,125 +1,92 @@
-;WITH account_details AS
-(
-    SELECT
-        account_id,
-        customer_id,
-        account_type,
-        balance,
-        currency,
-        opened_date,
-        account_status,
-        branch_code,
-        ROW_NUMBER() OVER
-        (
-            PARTITION BY TRIM(account_id)
-            ORDER BY TRY_CONVERT(DATE, TRIM(opened_date), 103) DESC
-        ) AS rn
-    FROM bronze.bank_accounts
-)
-
-INSERT INTO silver.bank_accounts
-(
-    account_id,
-    customer_id,
-    account_type,
-    balance,
-    currency,
-    opened_date,
-    account_status,
-    branch_code
-)
-
-SELECT
-    TRIM(REPLACE(REPLACE(account_id, CHAR(13), ''), CHAR(10), '')) AS account_id,
-
-    TRIM(REPLACE(REPLACE(customer_id, CHAR(13), ''), CHAR(10), '')) AS customer_id,
-
-    CASE
-        WHEN UPPER(TRIM(REPLACE(REPLACE(account_type, CHAR(13), ''), CHAR(10), '')))
-             IN ('SAVINGS', 'LOAN', 'CHECKING', 'CURRENT', 'CREDIT CARD')
-        THEN UPPER(TRIM(REPLACE(REPLACE(account_type, CHAR(13), ''), CHAR(10), '')))
-        ELSE NULL
-    END AS account_type,
-
-     TRY_CAST(
-    REPLACE(
-        REPLACE(
-            REPLACE(
-                REPLACE(
-                    REPLACE(
-                        TRIM(balance),
-                        '$',''
-                    ),
-                    'USD',''
-                ),
-                ',',''
-            ),
-            CHAR(13),''
-        ),
-        CHAR(10),''
+WITH customer_dedup AS
+    (
+    SELECT *,
+    ROW_NUMBER() OVER
+    (
+        PARTITION BY TRIM(customer_id)
+        ORDER BY TRY_CONVERT(DATE, TRIM(signup_date), 103) DESC
+    ) AS rn
+FROM bronze.bank_customers
     )
-AS DECIMAL(18,2)) AS balance,
+
+    SELECT
+    TRIM(customer_id) AS customer_id,
+
+    UPPER(TRIM(REPLACE(REPLACE(full_name, CHAR(13), ''), CHAR(10), ''))) AS full_name,
+
     CASE
-    WHEN UPPER(TRIM(REPLACE(REPLACE(currency, CHAR(13), ''), CHAR(10), '')))
-         IN ('USD', 'US DOLLAR', '$')
-        THEN 'USD'
+        WHEN email IS NULL THEN NULL
+        WHEN UPPER(TRIM(REPLACE(REPLACE(email, CHAR(13), ''), CHAR(10), ''))) IN ('NULL', 'N/A', '')
+        THEN NULL
+        ELSE LOWER(TRIM(REPLACE(REPLACE(email, CHAR(13), ''), CHAR(10), '')))
+    END AS email,
 
-    ELSE NULL
-END AS currency,
-CASE
-    WHEN COALESCE(
-            TRY_CONVERT(DATE, opened_date, 103),  -- DD/MM/YYYY
-            TRY_CONVERT(DATE, opened_date, 101),  -- MM/DD/YYYY
-            TRY_CONVERT(DATE, opened_date, 120),  -- YYYY-MM-DD HH:MI:SS
-            TRY_CAST(opened_date AS DATE)
-         ) > GETDATE()
-    THEN NULL
-
-    ELSE COALESCE(
-            TRY_CONVERT(DATE, opened_date, 103),
-            TRY_CONVERT(DATE, opened_date, 101),
-            TRY_CONVERT(DATE, opened_date, 120),
-            TRY_CAST(opened_date AS DATE)
-         )
-END AS opened_date,
     CASE
-    WHEN account_status IS NULL THEN NULL
+        WHEN phone IS NULL THEN NULL
+        WHEN UPPER(TRIM(REPLACE(REPLACE(phone, CHAR(13), ''), CHAR(10), ''))) IN ('NULL', 'N/A', '')
+        THEN NULL
+        ELSE
+        REPLACE(
+        REPLACE(
+        REPLACE(
+        REPLACE(
+        REPLACE(
+        TRIM(REPLACE(REPLACE(phone, CHAR(13), ''), CHAR(10), '')),
+        '(', ''
+        ),
+        ')', ''
+        ),
+        '-', ''
+        ),
+        '.', ''
+        ),
+        ' ', ''
+        )
+    END AS phone,
 
-    WHEN UPPER(TRIM(account_status)) = 'ACTIVE'
+    TRY_CAST(TRIM(dob) AS DATE) AS dob,
+
+    CASE
+        WHEN UPPER(TRIM(REPLACE(REPLACE(gender, CHAR(13), ''), CHAR(10), ''))) IN ('F', 'FEMALE')
+        THEN 'FEMALE'
+        WHEN UPPER(TRIM(REPLACE(REPLACE(gender, CHAR(13), ''), CHAR(10), ''))) IN ('M', 'MALE')
+        THEN 'MALE'
+        ELSE NULL
+    END AS gender,
+
+    CASE
+        WHEN UPPER(TRIM(REPLACE(REPLACE(country, CHAR(13), ''), CHAR(10), ''))) IN ('INDIA', 'BHARAT', 'IN')
+        THEN 'INDIA'
+
+        WHEN UPPER(TRIM(REPLACE(REPLACE(country, CHAR(13), ''), CHAR(10), ''))) IN ('UK', 'U.K.', 'UNITED KINGDOM', 'ENGLAND')
+        THEN 'UNITED KINGDOM'
+
+        WHEN UPPER(TRIM(REPLACE(REPLACE(country, CHAR(13), ''), CHAR(10), ''))) IN
+        ('US', 'USA', 'UNITED STATES', 'UNITED STATES OF AMERICA', 'U.S.A.')
+        THEN 'UNITED STATES'
+
+        ELSE UPPER(TRIM(REPLACE(REPLACE(country, CHAR(13), ''), CHAR(10), '')))
+        END AS country,
+
+        TRY_CONVERT(DATE, TRIM(signup_date), 103) AS signup_date,
+
+        CASE
+        WHEN UPPER(TRIM(REPLACE(REPLACE(customer_status, CHAR(13), ''), CHAR(10), ''))) = 'ACTIVE'
         THEN 'ACTIVE'
 
-    WHEN UPPER(TRIM(account_status)) = 'INACTIVE'
-        THEN 'INACTIVE'
-
-    WHEN UPPER(TRIM(account_status)) = 'PENDING'
+        WHEN UPPER(TRIM(REPLACE(REPLACE(customer_status, CHAR(13), ''), CHAR(10), ''))) = 'PENDING'
         THEN 'PENDING'
 
-    WHEN UPPER(TRIM(account_status)) = 'CLOSED'
+        WHEN UPPER(TRIM(REPLACE(REPLACE(customer_status, CHAR(13), ''), CHAR(10), ''))) = 'INACTIVE'
+        THEN 'INACTIVE'
+
+        WHEN UPPER(TRIM(REPLACE(REPLACE(customer_status, CHAR(13), ''), CHAR(10), ''))) = 'CLOSED'
         THEN 'CLOSED'
 
-    ELSE NULL
-END AS account_status,
-    CASE
-    WHEN branch_code IS NULL
-         OR TRIM(REPLACE(REPLACE(branch_code, CHAR(13), ''), CHAR(10), '')) = ''
-         OR UPPER(TRIM(REPLACE(REPLACE(branch_code, CHAR(13), ''), CHAR(10), '')))
-            IN ('NULL', 'N/A')
-    THEN NULL
+        ELSE NULL
+    END AS customer_status
 
-    WHEN TRIM(REPLACE(REPLACE(branch_code, CHAR(13), ''), CHAR(10), ''))
-         LIKE 'BR[0-9][0-9][0-9]'
-    THEN TRIM(REPLACE(REPLACE(branch_code, CHAR(13), ''), CHAR(10), ''))
-
-    ELSE NULL
-END AS branch_code
-
-FROM account_details
+FROM customer_dedup
 WHERE rn = 1
-  AND customer_id IS NOT NULL
-  AND UPPER(TRIM(customer_id)) NOT IN ('NULL', 'N/A')
-  AND EXISTS
-  (
-      SELECT 1
-      FROM silver.bank_customers c
-      WHERE c.customer_id = TRIM(account_details.customer_id)
-  );
+AND full_name IS NOT NULL
+AND TRIM(full_name) <> '';
