@@ -63,3 +63,4 @@ Bronze layer load executed successfully via `EXEC bronze.load_bronze;`
 Silver layer load executed successfully via `EXEC silver.load_silver;` — a stored procedure that wraps the three transformation scripts above (customers → accounts → transactions) with error handling and load timing.
 
 ![Silver layer load executed successfully via `EXEC silver.load_silver`](outputs_screenshots/proc_load_silver.png)
+![Silver layer Output](outputs_screenshots/silver_layer_output.png)
