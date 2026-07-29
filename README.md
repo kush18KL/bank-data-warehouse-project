@@ -36,21 +36,51 @@ Implemented as three transformation scripts, run in order (each depends on the o
 2. `proc_silver_customer.sql` — accounts (validates against loaded customers)
 3. `proc_load_transcations.sql` — transactions (validates against loaded accounts)
 
-## Gold Layer
+## 🥇 Gold Layer
 
-*Coming soon — star schema views for reporting (dim_customers, dim_accounts, fact_transactions).*
+The Gold Layer represents the business-ready analytical layer of the data warehouse. It follows a Star Schema design, making the data optimized for reporting and business intelligence tools like Power BI.
+
+### Objects Created
+
+- **dim_customers** – Stores customer information.
+- **dim_accounts** – Stores account details linked to customers.
+- **dim_date** – Stores date attributes for time-based analysis.
+- **fact_transactions** – Stores transaction records linked to customer accounts and dates.
+
+### Gold Layer ETL
+
+- Truncates existing Gold tables.
+- Loads Customer Dimension.
+- Loads Account Dimension.
+- Builds Date Dimension.
+- Loads Transaction Fact Table.
+- Validates successful data loading.
+
+**Gold Layer Output**
+
+| Table | Rows |
+|--------|------|
+| dim_customers | 1200 |
+| dim_accounts | 1723 |
+| dim_date | 1130 |
+| fact_transactions | 7315 |
 
 ## Repository Structure
 
 ```
 bank-data-warehouse-project/
 │
-├── datasets/                  # raw source CSVs
+├── datasets/                     # Raw CSV source files
 ├── scripts/
-│   ├── bronze/                 # DDL + load_bronze procedure
-│   └── silver/                 # DDL + load_silver procedure
-├── tests/                      # validation & data quality check scripts
-├── outputs_screenshots/        # sample execution output
+│   ├── bronze/                   # Bronze Layer SQL scripts
+│   ├── silver/                   # Silver Layer SQL scripts
+│   └── gold/                     # Gold Layer SQL scripts
+│       ├── 01_create_gold_tables.sql
+│       ├── 02_load_gold_procedure.sql
+│       ├── 03_execute_gold.sql
+│       └── 04_validation_queries.sql
+├── tests/                        # Validation scripts
+├── outputs_screenshots/          # Execution screenshots
 └── README.md
 ```
 
