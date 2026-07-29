@@ -94,3 +94,5 @@ Silver layer load executed successfully via `EXEC silver.load_silver;` — a sto
 
 ![Silver layer load executed successfully via `EXEC silver.load_silver`](outputs_screenshots/proc_load_silver.png)
 ![Silver layer Output](outputs_screenshots/silver_layer_output.png)
+
+![Gold_layer_Output](outputs_screenshots/gold_layer_final_output.png)
